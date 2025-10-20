@@ -10,6 +10,25 @@ interface LessonPlanData {
     title: string;
     description: string;
   }>;
+  visual_aids?: Array<{
+    type: string;
+    title: string;
+    description: string;
+    usage: string;
+  }>;
+  presentation_slides?: Array<{
+    slide_number: number;
+    title: string;
+    content: string[];
+    notes: string;
+  }>;
+  interactive_activities?: Array<{
+    title: string;
+    type: string;
+    duration: string;
+    instructions: string;
+    learning_outcome: string;
+  }>;
   quiz: Array<{
     question: string;
     options: string[];
@@ -78,8 +97,107 @@ export default function LessonPlanDisplay({ data }: LessonPlanDisplayProps) {
         </div>
       </section>
 
+      {/* Visual Aids */}
+      {data.visual_aids && data.visual_aids.length > 0 && (
+        <section className="animate-in fade-in duration-500 delay-350">
+          <h3 className="font-orbitron text-2xl font-semibold text-primary mb-4 flex items-center">
+            <span className="mr-3 text-2xl">🎨</span>
+            Visual Aids & Effects
+          </h3>
+          <div className="pl-4 border-l-2 border-primary/30">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {data.visual_aids.map((visual, i) => (
+                <div key={i} className="glass-pane p-4 rounded-lg border border-primary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs px-2 py-1 bg-primary/20 text-primary rounded-full font-semibold">
+                      {visual.type}
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-primary mb-2">{visual.title}</h4>
+                  <p className="text-sm text-muted-foreground mb-2">{visual.description}</p>
+                  <p className="text-xs text-primary/70 italic">Usage: {visual.usage}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Presentation Slides */}
+      {data.presentation_slides && data.presentation_slides.length > 0 && (
+        <section className="animate-in fade-in duration-500 delay-400">
+          <h3 className="font-orbitron text-2xl font-semibold text-primary mb-4 flex items-center">
+            <span className="mr-3 text-2xl">📊</span>
+            PowerPoint Presentation Outline
+          </h3>
+          <div className="pl-4 border-l-2 border-primary/30">
+            <div className="space-y-3">
+              {data.presentation_slides.map((slide, i) => (
+                <div key={i} className="glass-pane p-4 rounded-lg border border-primary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs px-2 py-1 bg-primary/20 text-primary rounded font-bold">
+                      Slide {slide.slide_number}
+                    </span>
+                    <h4 className="font-bold text-primary">{slide.title}</h4>
+                  </div>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-2">
+                    {slide.content.map((point, j) => (
+                      <li key={j}>{point}</li>
+                    ))}
+                  </ul>
+                  {slide.notes && (
+                    <p className="text-xs text-primary/70 italic mt-2 pt-2 border-t border-primary/10">
+                      Notes: {slide.notes}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Interactive Activities */}
+      {data.interactive_activities && data.interactive_activities.length > 0 && (
+        <section className="animate-in fade-in duration-500 delay-450">
+          <h3 className="font-orbitron text-2xl font-semibold text-primary mb-4 flex items-center">
+            <span className="mr-3 text-2xl">🎮</span>
+            Interactive Learning Activities
+          </h3>
+          <div className="pl-4 border-l-2 border-primary/30">
+            <div className="space-y-4">
+              {data.interactive_activities.map((activity, i) => (
+                <div key={i} className="glass-pane p-5 rounded-lg border border-primary/20">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-bold font-orbitron text-primary">{activity.title}</h4>
+                    <div className="flex gap-2">
+                      <span className="text-xs px-2 py-1 bg-primary/20 text-primary rounded-full">
+                        {activity.type}
+                      </span>
+                      <span className="text-xs px-2 py-1 bg-primary/20 text-primary rounded-full">
+                        ⏱️ {activity.duration}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-xs font-semibold text-primary mb-1">Instructions:</p>
+                      <p className="text-sm text-muted-foreground">{activity.instructions}</p>
+                    </div>
+                    <div className="pt-2 border-t border-primary/10">
+                      <p className="text-xs font-semibold text-primary mb-1">Learning Outcome:</p>
+                      <p className="text-sm text-muted-foreground">{activity.learning_outcome}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Quiz */}
-      <section className="animate-in fade-in duration-500 delay-450">
+      <section className="animate-in fade-in duration-500 delay-500">
         <h3 className="font-orbitron text-2xl font-semibold text-primary mb-4 flex items-center">
           <span className="mr-3 text-2xl">❓</span>
           Assessment Quiz
@@ -123,7 +241,7 @@ export default function LessonPlanDisplay({ data }: LessonPlanDisplayProps) {
       </section>
 
       {/* Homework */}
-      <section className="animate-in fade-in duration-500 delay-600">
+      <section className="animate-in fade-in duration-500 delay-550">
         <h3 className="font-orbitron text-2xl font-semibold text-primary mb-4 flex items-center">
           <span className="mr-3 text-2xl">📚</span>
           Homework Assignment

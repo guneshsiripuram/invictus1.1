@@ -19,37 +19,46 @@ export type Database = {
           created_at: string | null
           homework: Json
           id: string
+          interactive_activities: Json | null
           learning_objectives: string[]
           metadata: Json | null
+          presentation_slides: Json | null
           quiz: Json
           timeline: Json
           title: string
           updated_at: string | null
           user_id: string
+          visual_aids: Json | null
         }
         Insert: {
           created_at?: string | null
           homework: Json
           id?: string
+          interactive_activities?: Json | null
           learning_objectives: string[]
           metadata?: Json | null
+          presentation_slides?: Json | null
           quiz: Json
           timeline: Json
           title: string
           updated_at?: string | null
           user_id: string
+          visual_aids?: Json | null
         }
         Update: {
           created_at?: string | null
           homework?: Json
           id?: string
+          interactive_activities?: Json | null
           learning_objectives?: string[]
           metadata?: Json | null
+          presentation_slides?: Json | null
           quiz?: Json
           timeline?: Json
           title?: string
           updated_at?: string | null
           user_id?: string
+          visual_aids?: Json | null
         }
         Relationships: []
       }

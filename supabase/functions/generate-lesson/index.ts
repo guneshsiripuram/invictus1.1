@@ -39,12 +39,15 @@ Always structure the response as valid JSON matching the exact schema provided.`
 Learning modalities: ${modalities}
 Context: ${context}
 
-Create a lesson plan with:
+Create a comprehensive lesson plan with:
 1. A clear, engaging title
 2. 4 learning objectives (phrased as "Students will be able to...")
 3. A detailed timeline with 5 stages: Introduction, Core Concept 1, Core Concept 2, Activity, Conclusion
-4. A 4-question multiple-choice quiz with 4 options each and correct answers
-5. A creative homework assignment with an extension task for advanced students
+4. Visual aids: 5 specific visual elements (diagrams, charts, images, infographics) with detailed descriptions
+5. PPT presentation slides: 8-10 slide outlines with titles and key bullet points for each slide
+6. Interactive activities: 4 hands-on or digital interactive learning activities with step-by-step instructions
+7. A 4-question multiple-choice quiz with 4 options each and correct answers
+8. A creative homework assignment with an extension task for advanced students
 
 Return ONLY valid JSON in this exact structure:
 {
@@ -52,6 +55,15 @@ Return ONLY valid JSON in this exact structure:
   "learning_objectives": ["string", "string", "string", "string"],
   "timeline": [
     {"stage": "string", "title": "string", "description": "string"}
+  ],
+  "visual_aids": [
+    {"type": "string (e.g., diagram, chart, image)", "title": "string", "description": "string", "usage": "string"}
+  ],
+  "presentation_slides": [
+    {"slide_number": number, "title": "string", "content": ["bullet point 1", "bullet point 2"], "notes": "string"}
+  ],
+  "interactive_activities": [
+    {"title": "string", "type": "string (e.g., group work, simulation, game)", "duration": "string", "instructions": "string", "learning_outcome": "string"}
   ],
   "quiz": [
     {"question": "string", "options": ["string", "string", "string", "string"], "answer": "string"}
@@ -150,6 +162,9 @@ Return ONLY valid JSON in this exact structure:
               title: lessonData.title,
               learning_objectives: lessonData.learning_objectives,
               timeline: lessonData.timeline,
+              visual_aids: lessonData.visual_aids,
+              presentation_slides: lessonData.presentation_slides,
+              interactive_activities: lessonData.interactive_activities,
               quiz: lessonData.quiz,
               homework: lessonData.homework,
               metadata: { topic, grade, subject, modalities, context }
