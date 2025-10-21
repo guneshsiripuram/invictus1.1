@@ -59,7 +59,7 @@ export default function Auth() {
       if (error) throw error;
 
       if (data.session) {
-        toast.success('Account created! Welcome to Edu-Gen Prime');
+        toast.success('Account created! Welcome to INVICTUS');
         navigate('/');
       } else {
         toast.success('Account created! Please check your email to confirm.');
@@ -75,7 +75,7 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-blue-900/20 to-background p-4">
       <div className="glass-pane p-8 rounded-2xl w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="font-orbitron text-3xl font-bold glowing-text">Edu-Gen Prime</h1>
+          <h1 className="font-orbitron text-3xl font-bold glowing-text">INVICTUS</h1>
           <p className="text-primary mt-2">Access The Future of Education</p>
         </div>
 
@@ -129,7 +129,7 @@ export default function Auth() {
               Access System
             </Button>
             <div className="text-center">
-              <span className="text-muted-foreground text-sm">New to Edu-Gen Prime?</span>
+              <span className="text-muted-foreground text-sm">New to INVICTUS?</span>
               <Button
                 type="button"
                 variant="link"

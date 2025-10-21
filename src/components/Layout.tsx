@@ -41,7 +41,7 @@ export default function Layout({ children }: LayoutProps) {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <h1 className="font-orbitron text-2xl font-bold glowing-text cursor-pointer" onClick={() => navigate('/')}>
-              Edu-Gen Prime
+              INVICTUS
             </h1>
             <nav className="hidden md:flex space-x-6">
               <Button
