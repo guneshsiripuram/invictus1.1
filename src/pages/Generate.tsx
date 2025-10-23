@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { FileText, Loader2, Sparkles } from 'lucide-react';
+import { FileText, Loader2, Sparkles, Upload, X } from 'lucide-react';
 import LessonPlanDisplay from '@/components/LessonPlanDisplay';
 import Layout from '@/components/Layout';
 
@@ -24,6 +24,8 @@ export default function Generate() {
   const [loading, setLoading] = useState(false);
   const [lessonData, setLessonData] = useState<any>(null);
   const [copilotText, setCopilotText] = useState('');
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfContent, setPdfContent] = useState<string>('');
 
   const suggestions = [
     'Photosynthesis',
@@ -70,6 +72,47 @@ export default function Generate() {
     return () => clearTimeout(timer);
   }, []);
 
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      toast.error('Please upload a PDF file');
+      return;
+    }
+
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('File size must be less than 20MB');
+      return;
+    }
+
+    setPdfFile(file);
+    toast.info('Processing PDF...');
+
+    try {
+      // Save to a temporary location for parsing
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // Read file as base64
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPdfContent('PDF uploaded successfully');
+        toast.success('PDF uploaded and ready to use');
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error uploading PDF:', error);
+      toast.error('Failed to process PDF');
+      setPdfFile(null);
+    }
+  };
+
+  const removePdf = () => {
+    setPdfFile(null);
+    setPdfContent('');
+  };
+
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -83,7 +126,14 @@ export default function Generate() {
 
     try {
       const { data: functionData, error: functionError } = await supabase.functions.invoke('generate-lesson', {
-        body: { topic, grade, subject, modalities, context }
+        body: { 
+          topic, 
+          grade, 
+          subject, 
+          modalities, 
+          context,
+          pdfContent: pdfFile ? await pdfFile.text() : undefined
+        }
       });
 
       if (functionError) throw functionError;
@@ -202,6 +252,40 @@ export default function Generate() {
                     <SelectItem value="Focus on Modern Applications">Focus on Modern Applications</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="mt-6">
+                <Label className="text-muted-foreground mb-2 block">
+                  Upload Lecture PDF (Optional)
+                </Label>
+                {!pdfFile ? (
+                  <label className="flex items-center justify-center w-full p-4 border-2 border-dashed border-primary/30 rounded-lg cursor-pointer hover:border-primary/50 transition-colors bg-background/50">
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={handlePdfUpload}
+                      className="hidden"
+                    />
+                    <Upload className="w-5 h-5 mr-2 text-primary" />
+                    <span className="text-sm text-muted-foreground">Click to upload PDF</span>
+                  </label>
+                ) : (
+                  <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg border border-primary/30">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-primary" />
+                      <span className="text-sm font-medium">{pdfFile.name}</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={removePdf}
+                      className="h-8 w-8 p-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="mt-8">

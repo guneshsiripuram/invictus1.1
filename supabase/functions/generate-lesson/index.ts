@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { topic, grade, subject, modalities, context } = await req.json();
+    const { topic, grade, subject, modalities, context, pdfContent } = await req.json();
 
     if (!topic || !subject) {
       return new Response(
@@ -34,10 +34,12 @@ serve(async (req) => {
 Generate detailed and dynamic lesson plans that follow best practices in pedagogy.
 Always structure the response as valid JSON matching the exact schema provided.`;
 
+    const pdfSection = pdfContent ? `\n\nLECTURE PDF CONTENT:\n${pdfContent}\n\nIMPORTANT: Incorporate the content, structure, and key concepts from this lecture PDF into the lesson plan. Use the PDF as the primary source material.` : '';
+
     const userPrompt = `Generate an advanced, dynamic, and engaging lesson plan on "${topic}" for ${grade} level in ${subject}.
     
 Learning modalities: ${modalities}
-Context: ${context}
+Context: ${context}${pdfSection}
 
 Create a comprehensive lesson plan with:
 1. A clear, engaging title
