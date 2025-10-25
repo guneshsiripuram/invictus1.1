@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Download } from 'lucide-react';
+import pptxgen from 'pptxgenjs';
+import { toast } from 'sonner';
 
 interface LessonPlanData {
   title: string;
@@ -50,6 +52,73 @@ export default function LessonPlanDisplay({ data }: LessonPlanDisplayProps) {
 
   const toggleAnswer = (index: number) => {
     setShowAnswers(prev => ({ ...prev, [index]: !prev[index] }));
+  };
+
+  const downloadPowerPoint = () => {
+    try {
+      const pptx = new pptxgen();
+      
+      // Set presentation properties
+      pptx.author = 'INVICTUS Lesson Architect';
+      pptx.title = data.title;
+      pptx.subject = 'Lesson Plan Presentation';
+
+      // Title Slide
+      const titleSlide = pptx.addSlide();
+      titleSlide.background = { color: '1a1a1a' };
+      titleSlide.addText(data.title, {
+        x: 0.5,
+        y: 2.5,
+        w: 9,
+        h: 1.5,
+        fontSize: 44,
+        bold: true,
+        color: 'FFFFFF',
+        align: 'center',
+      });
+
+      // Add each presentation slide
+      data.presentation_slides?.forEach((slide) => {
+        const newSlide = pptx.addSlide();
+        newSlide.background = { color: 'FFFFFF' };
+        
+        // Slide title
+        newSlide.addText(slide.title, {
+          x: 0.5,
+          y: 0.5,
+          w: 9,
+          h: 0.8,
+          fontSize: 32,
+          bold: true,
+          color: '1a1a1a',
+        });
+
+        // Slide content (bullet points)
+        if (slide.content && slide.content.length > 0) {
+          const bulletText = slide.content.map(item => ({ text: item, options: { bullet: true } }));
+          newSlide.addText(bulletText, {
+            x: 0.5,
+            y: 1.5,
+            w: 9,
+            h: 4,
+            fontSize: 18,
+            color: '333333',
+          });
+        }
+
+        // Speaker notes
+        if (slide.notes) {
+          newSlide.addNotes(slide.notes);
+        }
+      });
+
+      // Save the presentation
+      pptx.writeFile({ fileName: `${data.title.replace(/[^a-z0-9]/gi, '_')}.pptx` });
+      toast.success('PowerPoint presentation downloaded successfully!');
+    } catch (error) {
+      console.error('Error generating PowerPoint:', error);
+      toast.error('Failed to generate PowerPoint presentation');
+    }
   };
 
   return (
@@ -126,10 +195,16 @@ export default function LessonPlanDisplay({ data }: LessonPlanDisplayProps) {
       {/* Presentation Slides */}
       {data.presentation_slides && data.presentation_slides.length > 0 && (
         <section className="animate-in fade-in duration-500 delay-400">
-          <h3 className="font-orbitron text-2xl font-semibold text-primary mb-4 flex items-center">
-            <span className="mr-3 text-2xl">📊</span>
-            PowerPoint Presentation Outline
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-orbitron text-2xl font-semibold text-primary flex items-center">
+              <span className="mr-3 text-2xl">📊</span>
+              PowerPoint Presentation
+            </h3>
+            <Button onClick={downloadPowerPoint} className="gap-2">
+              <Download className="h-4 w-4" />
+              Download PPT
+            </Button>
+          </div>
           <div className="pl-4 border-l-2 border-primary/30">
             <div className="space-y-3">
               {data.presentation_slides.map((slide, i) => (
