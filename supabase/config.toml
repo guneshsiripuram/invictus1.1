@@ -1,1 +1,7 @@
 project_id = "ckwsqunndclfcdmyknnl"
+
+[functions.generate-lesson]
+verify_jwt = false
+
+[functions.generate-slide-images]
+verify_jwt = false

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, Download } from 'lucide-react';
 import pptxgen from 'pptxgenjs';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LessonPlanData {
   title: string;
@@ -54,18 +55,44 @@ export default function LessonPlanDisplay({ data }: LessonPlanDisplayProps) {
     setShowAnswers(prev => ({ ...prev, [index]: !prev[index] }));
   };
 
-  const downloadPowerPoint = () => {
+  const downloadPowerPoint = async () => {
     try {
+      toast.info("Generating presentation with AI images... This may take a moment.");
+
+      // Call edge function to generate images for slides
+      const { data: imageData, error: imageError } = await supabase.functions.invoke('generate-slide-images', {
+        body: { 
+          slides: data.presentation_slides,
+          topic: data.title
+        }
+      });
+
+      if (imageError) {
+        console.error('Error generating images:', imageError);
+        toast.error('Failed to generate slide images. Creating presentation without images.');
+      }
+
       const pptx = new pptxgen();
       
       // Set presentation properties
       pptx.author = 'INVICTUS Lesson Architect';
       pptx.title = data.title;
       pptx.subject = 'Lesson Plan Presentation';
+      pptx.layout = 'LAYOUT_16x9';
 
-      // Title Slide
+      // Title Slide with gradient background
       const titleSlide = pptx.addSlide();
-      titleSlide.background = { color: '1a1a1a' };
+      titleSlide.background = { fill: '0F172A' };
+      
+      // Add decorative shapes
+      titleSlide.addShape(pptx.ShapeType.rect, {
+        x: 0,
+        y: 0,
+        w: '100%',
+        h: '100%',
+        fill: { type: 'solid', color: '1E293B', transparency: 50 }
+      });
+
       titleSlide.addText(data.title, {
         x: 0.5,
         y: 2.5,
@@ -75,34 +102,138 @@ export default function LessonPlanDisplay({ data }: LessonPlanDisplayProps) {
         bold: true,
         color: 'FFFFFF',
         align: 'center',
+        shadow: {
+          type: 'outer',
+          blur: 8,
+          offset: 4,
+          angle: 45,
+          color: '000000',
+          opacity: 0.5
+        }
       });
 
-      // Add each presentation slide
-      data.presentation_slides?.forEach((slide) => {
+      titleSlide.addText('INVICTUS Lesson Architect', {
+        x: 0.5,
+        y: 4.5,
+        w: 9,
+        h: 0.5,
+        fontSize: 18,
+        color: '94A3B8',
+        align: 'center',
+        italic: true
+      });
+
+      // Add each presentation slide with images and professional design
+      const images = imageData?.images || [];
+      
+      data.presentation_slides?.forEach((slide, index) => {
         const newSlide = pptx.addSlide();
-        newSlide.background = { color: 'FFFFFF' };
         
-        // Slide title
+        // Modern gradient background
+        newSlide.background = { fill: 'F8FAFC' };
+
+        // Header bar
+        newSlide.addShape(pptx.ShapeType.rect, {
+          x: 0,
+          y: 0,
+          w: '100%',
+          h: 1.2,
+          fill: { type: 'solid', color: '1E293B' }
+        });
+        
+        // Slide title on header
         newSlide.addText(slide.title, {
           x: 0.5,
-          y: 0.5,
+          y: 0.3,
           w: 9,
-          h: 0.8,
-          fontSize: 32,
+          h: 0.7,
+          fontSize: 28,
           bold: true,
-          color: '1a1a1a',
+          color: 'FFFFFF',
+          valign: 'middle'
         });
 
-        // Slide content (bullet points)
+        // Slide number badge
+        newSlide.addShape(pptx.ShapeType.rect, {
+          x: 9.2,
+          y: 0.35,
+          w: 0.6,
+          h: 0.6,
+          fill: { type: 'solid', color: '3B82F6' },
+          line: { type: 'none' }
+        });
+
+        newSlide.addText(`${slide.slide_number}`, {
+          x: 9.2,
+          y: 0.35,
+          w: 0.6,
+          h: 0.6,
+          fontSize: 16,
+          bold: true,
+          color: 'FFFFFF',
+          align: 'center',
+          valign: 'middle'
+        });
+
+        // Add AI-generated image if available
+        const slideImage = images.find((img: any) => img.slideIndex === index);
+        if (slideImage && slideImage.image) {
+          try {
+            newSlide.addImage({
+              data: slideImage.image,
+              x: 0.5,
+              y: 1.5,
+              w: 4.5,
+              h: 3,
+              sizing: { type: 'contain', w: 4.5, h: 3 },
+              rounding: true
+            });
+          } catch (imgError) {
+            console.error('Error adding image to slide:', imgError);
+          }
+        }
+
+        // Content area with bullet points
         if (slide.content && slide.content.length > 0) {
-          const bulletText = slide.content.map(item => ({ text: item, options: { bullet: true } }));
+          const bulletText = slide.content.map((item, idx) => ({ 
+            text: `${idx + 1}. ${item}`,
+            options: { 
+              color: '1E293B',
+              fontSize: 16,
+              breakLine: true
+            } 
+          }));
+          
           newSlide.addText(bulletText, {
-            x: 0.5,
+            x: slideImage && slideImage.image ? 5.2 : 0.5,
             y: 1.5,
+            w: slideImage && slideImage.image ? 4.3 : 9,
+            h: 3.5,
+            fontSize: 16,
+            color: '334155',
+            valign: 'top'
+          });
+        }
+
+        // Footer with notes
+        if (slide.notes) {
+          newSlide.addShape(pptx.ShapeType.rect, {
+            x: 0,
+            y: 5.1,
+            w: '100%',
+            h: 0.5,
+            fill: { type: 'solid', color: 'E2E8F0' }
+          });
+
+          newSlide.addText(`📝 ${slide.notes}`, {
+            x: 0.5,
+            y: 5.15,
             w: 9,
-            h: 4,
-            fontSize: 18,
-            color: '333333',
+            h: 0.4,
+            fontSize: 11,
+            color: '64748B',
+            italic: true,
+            valign: 'middle'
           });
         }
 
@@ -113,8 +244,8 @@ export default function LessonPlanDisplay({ data }: LessonPlanDisplayProps) {
       });
 
       // Save the presentation
-      pptx.writeFile({ fileName: `${data.title.replace(/[^a-z0-9]/gi, '_')}.pptx` });
-      toast.success('PowerPoint presentation downloaded successfully!');
+      await pptx.writeFile({ fileName: `${data.title.replace(/[^a-z0-9]/gi, '_')}.pptx` });
+      toast.success('Professional PowerPoint presentation downloaded successfully!');
     } catch (error) {
       console.error('Error generating PowerPoint:', error);
       toast.error('Failed to generate PowerPoint presentation');
