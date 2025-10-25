@@ -57,19 +57,28 @@ export default function LessonPlanDisplay({ data }: LessonPlanDisplayProps) {
 
   const downloadPowerPoint = async () => {
     try {
-      toast.info("Generating presentation with AI images... This may take a moment.");
+      toast.info("Generating presentation with AI images... This may take 1-2 minutes.");
 
       // Call edge function to generate images for slides
-      const { data: imageData, error: imageError } = await supabase.functions.invoke('generate-slide-images', {
-        body: { 
-          slides: data.presentation_slides,
-          topic: data.title
+      let imageData: any = null;
+      try {
+        const response = await supabase.functions.invoke('generate-slide-images', {
+          body: { 
+            slides: data.presentation_slides,
+            topic: data.title
+          }
+        });
+        
+        if (response.error) {
+          console.error('Error generating images:', response.error);
+          toast.warning('Some images could not be generated. Creating presentation with available content.');
+        } else {
+          imageData = response.data;
+          console.log('Successfully generated images:', imageData);
         }
-      });
-
-      if (imageError) {
-        console.error('Error generating images:', imageError);
-        toast.error('Failed to generate slide images. Creating presentation without images.');
+      } catch (error) {
+        console.error('Failed to call image generation function:', error);
+        toast.warning('Could not generate images. Creating presentation without images.');
       }
 
       const pptx = new pptxgen();
@@ -125,6 +134,13 @@ export default function LessonPlanDisplay({ data }: LessonPlanDisplayProps) {
 
       // Add each presentation slide with images and professional design
       const images = imageData?.images || [];
+      console.log(`Adding ${images.length} images to presentation. Images available:`, images.map((img: any) => ({ 
+        slideIndex: img.slideIndex, 
+        hasImage: !!img.image,
+        imagePreview: img.image ? img.image.substring(0, 50) + '...' : null
+      })));
+      
+      let imagesAdded = 0;
       
       data.presentation_slides?.forEach((slide, index) => {
         const newSlide = pptx.addSlide();
@@ -177,8 +193,11 @@ export default function LessonPlanDisplay({ data }: LessonPlanDisplayProps) {
 
         // Add AI-generated image if available
         const slideImage = images.find((img: any) => img.slideIndex === index);
+        console.log(`Slide ${index + 1}: Looking for image. Found:`, slideImage ? 'Yes' : 'No');
+        
         if (slideImage && slideImage.image) {
           try {
+            console.log(`Adding image to slide ${index + 1}`);
             newSlide.addImage({
               data: slideImage.image,
               x: 0.5,
@@ -188,9 +207,13 @@ export default function LessonPlanDisplay({ data }: LessonPlanDisplayProps) {
               sizing: { type: 'contain', w: 4.5, h: 3 },
               rounding: true
             });
+            imagesAdded++;
+            console.log(`Successfully added image to slide ${index + 1}`);
           } catch (imgError) {
-            console.error('Error adding image to slide:', imgError);
+            console.error(`Error adding image to slide ${index + 1}:`, imgError);
           }
+        } else {
+          console.log(`No image available for slide ${index + 1}`);
         }
 
         // Content area with bullet points
@@ -245,7 +268,9 @@ export default function LessonPlanDisplay({ data }: LessonPlanDisplayProps) {
 
       // Save the presentation
       await pptx.writeFile({ fileName: `${data.title.replace(/[^a-z0-9]/gi, '_')}.pptx` });
-      toast.success('Professional PowerPoint presentation downloaded successfully!');
+      
+      const totalSlides = data.presentation_slides?.length || 0;
+      toast.success(`PowerPoint downloaded! ${imagesAdded} of ${totalSlides} slides include AI-generated images.`);
     } catch (error) {
       console.error('Error generating PowerPoint:', error);
       toast.error('Failed to generate PowerPoint presentation');

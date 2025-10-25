@@ -29,7 +29,11 @@ serve(async (req) => {
       );
     }
 
-    const imagePromises = slides.map(async (slide: any, index: number) => {
+    // Generate images sequentially to avoid rate limiting
+    const images = [];
+    
+    for (let index = 0; index < slides.length; index++) {
+      const slide = slides[index];
       try {
         // Create a detailed prompt for image generation
         const imagePrompt = `Create a professional, educational illustration for a presentation slide about "${slide.title}". 
@@ -59,8 +63,10 @@ Style: Professional educational graphic with clear visuals, high quality, suitab
         });
 
         if (!response.ok) {
-          console.error(`Failed to generate image for slide ${index + 1}:`, response.status);
-          return { slideIndex: index, image: null, error: "Failed to generate image" };
+          const errorText = await response.text();
+          console.error(`Failed to generate image for slide ${index + 1}:`, response.status, errorText);
+          images.push({ slideIndex: index, image: null, error: `HTTP ${response.status}` });
+          continue;
         }
 
         const result = await response.json();
@@ -68,18 +74,21 @@ Style: Professional educational graphic with clear visuals, high quality, suitab
 
         if (imageUrl) {
           console.log(`Successfully generated image for slide ${index + 1}`);
-          return { slideIndex: index, image: imageUrl };
+          images.push({ slideIndex: index, image: imageUrl });
         } else {
           console.error(`No image URL in response for slide ${index + 1}`);
-          return { slideIndex: index, image: null };
+          images.push({ slideIndex: index, image: null });
         }
       } catch (error) {
         console.error(`Error generating image for slide ${index + 1}:`, error);
-        return { slideIndex: index, image: null, error: error instanceof Error ? error.message : "Unknown error" };
+        images.push({ slideIndex: index, image: null, error: error instanceof Error ? error.message : "Unknown error" });
       }
-    });
-
-    const images = await Promise.all(imagePromises);
+      
+      // Add delay between requests to avoid rate limiting
+      if (index < slides.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
 
     return new Response(
       JSON.stringify({ images }),
